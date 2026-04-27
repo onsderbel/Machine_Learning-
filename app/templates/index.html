@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Retail Intelligence — Churn Analysis</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg-main: #f4f7fb;
+      --bg-card: #ffffff;
+      --primary: #7c3aed;
+      --primary-dark: #5b21b6;
+      --secondary: #06b6d4;
+      --text-main: #111827;
+      --text-muted: #6b7280;
+      --border: #e5e7eb;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --dark: #1f2937;
+    }
+
+    body {
+      font-family: "Inter", "Segoe UI", Arial, sans-serif;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top left, rgba(124, 58, 237, 0.18), transparent 35%),
+        radial-gradient(circle at top right, rgba(6, 182, 212, 0.20), transparent 35%),
+        var(--bg-main);
+      color: var(--text-main);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      min-height: 100vh;
+    }
+
+    aside {
+      background: linear-gradient(180deg, #111827, #312e81);
+      color: white;
+      padding: 2rem 1.4rem;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+    }
+
+    .brand {
+      margin-bottom: 2.5rem;
+    }
+
+    .brand-badge {
+      width: 55px;
+      height: 55px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+    }
+
+    .brand h1 {
+      font-size: 1.45rem;
+      line-height: 1.2;
+      margin-bottom: .4rem;
+    }
+
+    .brand p {
+      font-size: .85rem;
+      color: #c7d2fe;
+      line-height: 1.5;
+    }
+
+    .side-card {
+      background: rgba(255,255,255,.09);
+      border: 1px solid rgba(255,255,255,.15);
+      border-radius: 20px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .side-card span {
+      font-size: .75rem;
+      color: #c7d2fe;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .side-card strong {
+      display: block;
+      font-size: 1.5rem;
+      margin-top: .4rem;
+    }
+
+    main {
+      padding: 2rem;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      gap: 1rem;
+    }
+
+    .topbar h2 {
+      font-size: 1.8rem;
+      color: var(--dark);
+    }
+
+    .topbar p {
+      color: var(--text-muted);
+      margin-top: .35rem;
+    }
+
+    .status-pill {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: .65rem 1rem;
+      font-weight: 700;
+      color: var(--primary-dark);
+      box-shadow: 0 10px 25px rgba(15,23,42,.08);
+      white-space: nowrap;
+    }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    .panel {
+      background: rgba(255,255,255,.86);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(255,255,255,.9);
+      border-radius: 26px;
+      box-shadow: 0 20px 45px rgba(15, 23, 42, .08);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 1.4rem 1.6rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .panel-header h3 {
+      font-size: 1.05rem;
+      color: var(--dark);
+    }
+
+    .panel-header small {
+      color: var(--text-muted);
+    }
+
+    .panel-body {
+      padding: 1.5rem;
+    }
+
+    .section-title {
+      font-size: .82rem;
+      font-weight: 800;
+      color: var(--primary-dark);
+      text-transform: uppercase;
+      letter-spacing: .09em;
+      margin: 1.2rem 0 .8rem;
+    }
+
+    .section-title:first-child {
+      margin-top: 0;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: .45rem;
+    }
+
+    label {
+      font-size: .75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    input, select {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: #f9fafb;
+      border-radius: 14px;
+      padding: .75rem .85rem;
+      font-size: .92rem;
+      color: var(--text-main);
+      outline: none;
+      transition: all .2s ease;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--primary);
+      background: white;
+      box-shadow: 0 0 0 4px rgba(124,58,237,.12);
+    }
+
+    .btn-predict {
+      width: 100%;
+      margin-top: 1.5rem;
+      border: none;
+      border-radius: 18px;
+      padding: 1rem;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 18px 35px rgba(124,58,237,.25);
+      transition: transform .2s ease, box-shadow .2s ease;
+    }
+
+    .btn-predict:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 25px 45px rgba(124,58,237,.32);
+    }
+
+    .btn-predict:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 1.2rem;
+      color: var(--text-muted);
+    }
+
+    .spinner {
+      width: 34px;
+      height: 34px;
+      margin: 0 auto .6rem;
+      border-radius: 50%;
+      border: 4px solid #e5e7eb;
+      border-top-color: var(--primary);
+      animation: spin .8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    #result {
+      display: none;
+    }
+
+    .result-hero {
+      background: linear-gradient(135deg, #111827, #312e81);
+      color: white;
+      border-radius: 24px;
+      padding: 1.4rem;
+      margin-bottom: 1rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .result-hero::after {
+      content: "";
+      position: absolute;
+      width: 170px;
+      height: 170px;
+      background: rgba(255,255,255,.10);
+      border-radius: 50%;
+      right: -70px;
+      top: -60px;
+    }
+
+    .result-hero span {
+      font-size: .8rem;
+      color: #c7d2fe;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .result-hero strong {
+      display: block;
+      font-size: 2.1rem;
+      margin-top: .5rem;
+    }
+
+    .metric-list {
+      display: grid;
+      gap: .9rem;
+    }
+
+    .metric {
+      border: 1px solid var(--border);
+      background: #f9fafb;
+      border-radius: 18px;
+      padding: 1rem;
+    }
+
+    .metric-label {
+      font-size: .76rem;
+      font-weight: 800;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: .4rem;
+    }
+
+    .metric-value {
+      font-size: 1.35rem;
+      font-weight: 900;
+    }
+
+    .risk-Low, .churn-0 { color: var(--success); }
+    .risk-Medium { color: var(--warning); }
+    .risk-High { color: #f97316; }
+    .risk-Critical, .churn-1 { color: var(--danger); }
+
+    .prob-bar-bg {
+      height: 12px;
+      border-radius: 999px;
+      background: #e5e7eb;
+      margin-top: .8rem;
+      overflow: hidden;
+    }
+
+    .prob-bar-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      transition: width .6s ease;
+    }
+
+    .alert {
+      margin-top: 1rem;
+      border-radius: 18px;
+      padding: 1rem;
+      font-size: .92rem;
+      line-height: 1.5;
+      border: 1px solid var(--border);
+      background: #f9fafb;
+    }
+
+    .alert.churn {
+      background: #fef2f2;
+      border-color: #fecaca;
+      color: #991b1b;
+    }
+
+    .alert.no-churn {
+      background: #ecfdf5;
+      border-color: #a7f3d0;
+      color: #065f46;
+    }
+
+    @media (max-width: 1000px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      aside {
+        position: relative;
+        height: auto;
+      }
+
+      .dashboard {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 700px) {
+      main {
+        padding: 1rem;
+      }
+
+      .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .grid-3, .grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="layout">
+  <aside>
+    <div class="brand">
+      <div class="brand-badge">📈</div>
+      <h1>Retail Intelligence</h1>
+      <p>Tableau intelligent pour analyser le comportement client et prédire le risque de churn.</p>
+    </div>
+
+   
+
+    <div class="side-card">
+      <span>Mission</span>
+      <strong>Churn & Segmentation</strong>
+    </div>
+
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div>
+        <h2>Analyse comportementale clientèle</h2>
+        <p>Remplis le profil client puis lance la prédiction.</p>
+      </div>
+      <div class="status-pill">ML Model Ready</div>
+    </div>
+
+    <div class="dashboard">
+      <section class="panel">
+        <div class="panel-header">
+          <div>
+            <h3>Profil client</h3>
+            <small>Données utilisées par le modèle de prédiction</small>
+          </div>
+        </div>
+
+        <div class="panel-body">
+          <div class="section-title">Comportement d’achat</div>
+
+          <div class="grid-3">
+            <div class="field">
+              <label>Recency (days)</label>
+              <input type="number" id="Recency" value="45" min="0" max="400" />
+            </div>
+            <div class="field">
+              <label>Frequency (orders)</label>
+              <input type="number" id="Frequency" value="8" min="1" max="50" />
+            </div>
+            <div class="field">
+              <label>Monetary Total (£)</label>
+              <input type="number" id="MonetaryTotal" value="1500" step="0.01" />
+            </div>
+          </div>
+
+          <div class="section-title">Valeur client</div>
+
+          <div class="grid-3">
+            <div class="field">
+              <label>Monetary Avg (£)</label>
+              <input type="number" id="MonetaryAvg" value="187.5" step="0.01" />
+            </div>
+            <div class="field">
+              <label>Monetary Std</label>
+              <input type="number" id="MonetaryStd" value="50" step="0.01" />
+            </div>
+            <div class="field">
+              <label>Total Quantity</label>
+              <input type="number" id="TotalQuantity" value="320" />
+            </div>
+          </div>
+
+          <div class="section-title">Satisfaction & risque</div>
+
+          <div class="grid-3">
+            <div class="field">
+              <label>Customer Tenure (days)</label>
+              <input type="number" id="CustomerTenureDays" value="400" />
+            </div>
+            <div class="field">
+              <label>Age</label>
+              <input type="number" id="Age" value="34" min="18" max="90" />
+            </div>
+            <div class="field">
+              <label>Satisfaction Score (1-5)</label>
+              <input type="number" id="SatisfactionScore" value="4" min="1" max="5" step="0.1" />
+            </div>
+          </div>
+
+          <div class="grid-3" style="margin-top:1rem;">
+            <div class="field">
+              <label>Support Tickets</label>
+              <input type="number" id="SupportTicketsCount" value="2" min="0" max="15" />
+            </div>
+            <div class="field">
+              <label>Return Ratio</label>
+              <input type="number" id="ReturnRatio" value="0.05" min="0" max="1" step="0.01" />
+            </div>
+            <div class="field">
+              <label>Cancelled Transactions</label>
+              <input type="number" id="CancelledTransactions" value="1" min="0" />
+            </div>
+          </div>
+
+          <div class="section-title">Profil marketing</div>
+
+          <div class="grid-2">
+            <div class="field">
+              <label>RFM Segment</label>
+              <select id="RFMSegment">
+                <option>Champions</option>
+                <option selected>Fidèles</option>
+                <option>Potentiels</option>
+                <option>Dormants</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Spending Category</label>
+              <select id="SpendingCategory">
+                <option>Low</option>
+                <option selected>Medium</option>
+                <option>High</option>
+                <option>VIP</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Customer Type</label>
+              <select id="CustomerType">
+                <option>Hyperactif</option>
+                <option selected>Régulier</option>
+                <option>Occasionnel</option>
+                <option>Nouveau</option>
+                <option>Perdu</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Account Status</label>
+              <select id="AccountStatus">
+                <option selected>Active</option>
+                <option>Suspended</option>
+                <option>Pending</option>
+                <option>Closed</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Region</label>
+              <select id="Region">
+                <option selected>UK</option>
+                <option>Europe N</option>
+                <option>Europe S</option>
+                <option>Europe E</option>
+                <option>Europe C</option>
+                <option>Asie</option>
+                <option>Autre</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Gender</label>
+              <select id="Gender">
+                <option selected>M</option>
+                <option>F</option>
+                <option>Unknown</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Hidden fields with defaults -->
+          <input type="hidden" id="CustomerID" value="99999" />
+          <input type="hidden" id="MonetaryMin" value="50" />
+          <input type="hidden" id="MonetaryMax" value="400" />
+          <input type="hidden" id="AvgQuantityPerTransaction" value="40" />
+          <input type="hidden" id="MinQuantity" value="-5" />
+          <input type="hidden" id="MaxQuantity" value="200" />
+          <input type="hidden" id="FirstPurchaseDaysAgo" value="420" />
+          <input type="hidden" id="PreferredDayOfWeek" value="2" />
+          <input type="hidden" id="PreferredHour" value="14" />
+          <input type="hidden" id="PreferredMonth" value="11" />
+          <input type="hidden" id="WeekendPurchaseRatio" value="0.3" />
+          <input type="hidden" id="AvgDaysBetweenPurchases" value="35" />
+          <input type="hidden" id="UniqueProducts" value="45" />
+          <input type="hidden" id="UniqueDescriptions" value="43" />
+          <input type="hidden" id="AvgProductsPerTransaction" value="5.6" />
+          <input type="hidden" id="UniqueCountries" value="1" />
+          <input type="hidden" id="NegativeQuantityCount" value="2" />
+          <input type="hidden" id="ZeroPriceCount" value="0" />
+          <input type="hidden" id="TotalTransactions" value="350" />
+          <input type="hidden" id="UniqueInvoices" value="8" />
+          <input type="hidden" id="AvgLinesPerInvoice" value="43" />
+          <input type="hidden" id="RegistrationDate" value="2010-05-15" />
+          <input type="hidden" id="NewsletterSubscribed" value="Yes" />
+          <input type="hidden" id="LastLoginIP" value="77.99.123.45" />
+          <input type="hidden" id="AgeCategory" value="25-34" />
+          <input type="hidden" id="FavoriteSeason" value="Automne" />
+          <input type="hidden" id="PreferredTimeOfDay" value="Après-midi" />
+          <input type="hidden" id="LoyaltyLevel" value="Établi" />
+          <input type="hidden" id="ChurnRiskCategory" value="Faible" />
+          <input type="hidden" id="WeekendPreference" value="Semaine" />
+          <input type="hidden" id="BasketSizeCategory" value="Moyen" />
+          <input type="hidden" id="ProductDiversity" value="Modéré" />
+          <input type="hidden" id="Country" value="United Kingdom" />
+
+          <button class="btn-predict" id="btnPredict" onclick="runPrediction()">
+            Analyser le risque client
+          </button>
+
+          <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Analyse du profil client en cours...</p>
+          </div>
+        </div>
+      </section>
+
+      <aside class="panel" id="result">
+        <div class="panel-header">
+          <div>
+            <h3>Résultat ML</h3>
+            <small>Prédiction générée par le modèle</small>
+          </div>
+        </div>
+
+        <div class="panel-body">
+          <div class="result-hero">
+            <span>Churn prediction</span>
+            <strong id="res-prediction">—</strong>
+          </div>
+
+          <div class="metric-list">
+            <div class="metric">
+              <div class="metric-label">Risk Level</div>
+              <div class="metric-value" id="res-risk">—</div>
+            </div>
+
+            <div class="metric">
+              <div class="metric-label">Churn Probability</div>
+              <div class="metric-value" id="res-prob">—</div>
+              <div class="prob-bar-bg">
+                <div class="prob-bar-fill" id="prob-bar"></div>
+              </div>
+            </div>
+
+            <div class="metric">
+              <div class="metric-label">Customer Segment</div>
+              <div class="metric-value" id="res-cluster">—</div>
+            </div>
+          </div>
+
+          <div class="alert" id="res-alert"></div>
+        </div>
+      </aside>
+    </div>
+  </main>
+</div>
+
+<script>
+  async function runPrediction() {
+    const btn = document.getElementById("btnPredict");
+    const loading = document.getElementById("loading");
+    const result = document.getElementById("result");
+
+    btn.disabled = true;
+    loading.style.display = "block";
+    result.style.display = "none";
+
+    const payload = {};
+    document.querySelectorAll("input, select").forEach(el => {
+      if (el.id) {
+        const val = parseFloat(el.value);
+        payload[el.id] = isNaN(val) ? el.value : val;
+      }
+    });
+
+    try {
+      const resp = await fetch("/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await resp.json();
+
+      if (data.error) {
+        alert("Error: " + data.error);
+        return;
+      }
+
+      const predEl = document.getElementById("res-prediction");
+      predEl.textContent = data.churn_prediction === 1 ? "CHURN" : "LOYAL";
+      predEl.className = "churn-" + data.churn_prediction;
+
+      const riskEl = document.getElementById("res-risk");
+      riskEl.textContent = data.risk_label;
+      riskEl.className = "metric-value risk-" + data.risk_label;
+
+      const pct = Math.round(data.churn_probability * 100);
+      document.getElementById("res-prob").textContent = pct + "%";
+
+      const bar = document.getElementById("prob-bar");
+      const colors = {
+        Low: "#10b981",
+        Medium: "#f59e0b",
+        High: "#f97316",
+        Critical: "#ef4444"
+      };
+      bar.style.width = pct + "%";
+      bar.style.background = colors[data.risk_label] || "#7c3aed";
+
+      document.getElementById("res-cluster").textContent = "Cluster #" + data.cluster;
+
+      const alertBox = document.getElementById("res-alert");
+      if (data.churn_prediction === 1) {
+        alertBox.className = "alert churn";
+        alertBox.textContent = "Ce client présente un risque de départ. Une action de rétention est recommandée : offre personnalisée, réduction ou contact direct.";
+      } else {
+        alertBox.className = "alert no-churn";
+        alertBox.textContent = "Ce client semble fidèle. Il est recommandé de continuer avec des recommandations personnalisées et un suivi régulier.";
+      }
+
+      result.style.display = "block";
+    } catch (err) {
+      alert("Request failed: " + err.message);
+    } finally {
+      btn.disabled = false;
+      loading.style.display = "none";
+    }
+  }
+</script>
+
+</body>
+</html>

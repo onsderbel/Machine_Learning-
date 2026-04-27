@@ -1,0 +1,15 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+.DS_Store
+*.joblib
+*.pkl
+data/processed/*
+data/train_test/*
+reports/*.png
+reports/*.csv
+!data/processed/.gitkeep
+!data/train_test/.gitkeep
+!reports/.gitkeep
